@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script src="http://d3js.org/d3.v3.min.js"></script>
+        <script src="http://dimplejs.org/dist/dimple.v2.2.0.min.js"></script>
+    </head>
+    <body>
+      <h1>HR Analysis Based on Body Size</h1>
+      <h2>
+      In my opinion, more stronger player seems to have more HR score, so this graph is to show the relations between HR and weight.
+      But by this graph, we can see that heavier players don't really have more HR.
+
+      </h2>
+        <!-- Visible Content and scripts -->
+        <div id="chartContainer"></div>
+        <script type="text/javascript">
+            var svg = dimple.newSvg("#chartContainer", 1800, 800);
+            d3.csv("baseball_data.csv", function(data) {
+                var myChart = new dimple.chart(svg, data);
+                myChart.addCategoryAxis("x", "weight");
+                myChart.addMeasureAxis("y", "HR");
+                myChart.addSeries(null, dimple.plot.bubble);
+                myChart.draw();
+            
+            });
+ 
+ 
+        </script>
+    </body>
+
+</html>

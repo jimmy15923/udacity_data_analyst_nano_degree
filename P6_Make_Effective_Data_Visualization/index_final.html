@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script src="http://d3js.org/d3.v3.min.js"></script>
+        <script src="http://dimplejs.org/dist/dimple.v2.2.0.min.js"></script>
+    </head>
+    <body>
+
+      <h1>HR Analysis Based on Body Size</h1>
+      <h2>
+      In my opinion, more stronger player seems to have more HR score, so this graph is to show the relations between HR and weight.
+      But by this graph, we can see that heavier players don't really have more HR.
+      Other interesting result show that in this graph, we can see that most of higher HR player are right-handeness.
+
+      </h2>
+        <!-- Visible Content and scripts -->
+        <div id="chartContainer"></div>
+        <script type="text/javascript">
+            var svg = dimple.newSvg("#chartContainer", 900, 600);
+            
+
+            // The main plot function.
+
+            d3.csv("final_baseball.csv", function(data) {
+                var myChart = new dimple.chart(svg, data);
+
+                // Group my weight variable 
+                var x = myChart.addCategoryAxis("x", "w_group");
+                x.addOrderRule(["(140, 150]" , "(150, 160]" , "(160, 170]" , "(170, 180]", "(180, 190]", "(190, 200]", "(200, 210]","(210, 220]" , "(220, 230]" , "(230, 240]" ,"(240, 250]"]);
+                x.title = 'category of weights';
+                var y = myChart.addMeasureAxis("y", "HR");
+                y.title = "Number of HomeRuns";
+                myChart.addMeasureAxis("p", "HR");
+
+                // draw a pie chart for each handeness
+                var pies = myChart.addSeries("handedness", dimple.plot.pie);
+                pies.radius = 15;
+                myChart.addLegend(140, 10, 360, 20, "right");
+
+                // draw a horizontal line represent the average HR score.
+                var s3 = myChart.addSeries("HR_average_line", dimple.plot.line);
+                    s3.data = [
+                        { "HR_average_line" : "HR_average_line", "HR" : 4373.17, "w_group" :"(140, 150]" }, 
+                        { "HR_average_line" : "HR_average_line", "HR" : 4373.17, "w_group" : "(240, 250]" }
+                    ];
+
+                // show explanation for the pie chart.    
+                pies.getTooltipText = function (e) {
+                        return [
+                                "category of weights: " + e.x,
+                                "Number of Home Runs: " + e.y,
+                                "Number of each handedness:" + e.p
+                        ];
+                    };
+                myChart.draw();
+            
+            });
+ 
+ 
+        </script>
+    </body>
+
+</html>

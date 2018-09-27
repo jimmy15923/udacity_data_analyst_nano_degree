@@ -1,0 +1,461 @@
+Red Wine EDA by Jimmy Yang
+========================================================
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+# Load all of the packages that you end up using
+# in your analysis in this code chunk.
+
+# Notice that the parameter "echo" was set to FALSE for this code chunk.
+# This prevents the code from displaying in the knitted HTML output.
+# You should set echo=FALSE for all code chunks in your file.
+
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(GGally)
+library(gridExtra)
+library(RColorBrewer)
+
+```
+
+# Intro to my project
+
+This project used the redwine dataset to conduct the EDA method. Redwine dataset has 1,599 observations and 13 variables, each wine has a quality score. In this project, I am going to find which chemical properties influence the quality of red wines. In the univariate part, I will see how each variable distributed and see if any transformed could be made. In the bivariate part, I will first check the correaltion coefficients for each variables, used the higher correlated variable to conduct linear regression. I will also use some particular variables which seems to affect the quality by the text file. In the multivariate part, I will group the quality by worse, normal, better and see the variable distributed in each group. 
+
+```{r echo=FALSE, Load_the_Data}
+# Load the Data
+red <- read.csv("C:\\Users\\jimmy15923\\Documents\\wineQualityReds.csv")
+names(red)
+summary(red)
+```
+
+# Univariate Plots Section
+THis dataset contains 1599 observations and 13 variables
+```{r echo = FALSE, warning = FALSE, Univariate_Plots}
+red$quality_str = factor(red$quality)
+#change quality for integer to factor
+table(red$quality)
+qplot(data = red, x = quality_str) +
+  ggtitle("Distribution of quality")
+```
+
+change quality for integer to factor.It looks like most wine scored 5 or 6 points.
+```{r echo=FALSE, warning=FALSE} 
+qplot(data = red, x = pH, binwidth = 0.01) +
+  ggtitle("Distribution of pH")
+```
+
+ph looks like normal distribution
+
+```{r echo=FALSE, warning=FALSE}
+qplot(data = red , x = alcohol, binwidth = 0.1) +
+  ggtitle("Distribution of residaul.sugar")
+qplot(data = red , x = log10(alcohol), binwidth = 0.01) +
+  ggtitle("Distribution of residaul.sugar")
+```
+
+alcohol is right skewed distribution, after transform to log, it still look like positive skewed distribution.
+
+      plot for all others chemicals
+
+```{r echo=FALSE, warning=FALSE}
+qplot(data = red , x = fixed.acidity , binwidth = 0.1) +
+  ggtitle("Distribution of residaul.sugar")
+
+qplot(data = red , x = volatile.acidity , binwidth = 0.05) +
+  ggtitle("Distribution of volatile.acidity")
+
+qplot(data = red , x = citric.acid , binwidth = 0.01) +
+  ggtitle("Distribution of citric.acid")
+
+qplot(data = red , x = residual.sugar, binwidth = 0.3) +
+  ggtitle("Distribution of residaul.sugar")
+
+qplot(data = red , x = chlorides , binwidth = 0.01) +
+  ggtitle("Distribution of chlorides")
+
+qplot(data = red , x = free.sulfur.dioxide , binwidth = 1) +
+  ggtitle("Distribution of free.sulfur.dioxide")
+
+qplot(data = red , x = total.sulfur.dioxide , binwidth = 5) +
+  ggtitle("Distribution of total.sulfur.dioxide")
+
+qplot(data = red , x = log10(total.sulfur.dioxide) , binwidth = 0.05) +
+  ggtitle("Distribution of log10(total.sulfur.dioxide)")
+
+qplot(data = red , x = sulphates , binwidth = 0.1) +
+  ggtitle("Distribution of sulphates")
+
+```
+
+I found that citric.acid doesn't have obiviuos pattern, but it hass two peak occur at 0 and about 0.5, and an outlier at 1.
+For residual sugar, most of them at about 2~3, but many outliers
+For chlorides, same pattern as residaul sugar(maybe some relations between each other)
+For sulphates, same pattern as chlorides
+For sulfur.dioxide, both of free and total are right skew distribution, so I transfrom the total with log and it looks like normal distribution 
+
+    see more clear about residaul suagr and chlorides
+```{r echo = FALSE, warning = FALSE}
+qplot(data = red , x = residual.sugar, binwidth = 0.1, xlim = c(0,4)) +
+  ggtitle("Distribution of residaul.sugar")
+qplot(data = red , x = chlorides , binwidth = 0.005, xlim = c(0,0.2)) +
+  ggtitle("Distribution of chlorides")
+```
+
+After trimming those outliers, both of variable look likes normal distribution, I wonder those outlies could have better or worse qulaity.
+
+    How the variables ditribute when high quality
+```{r echo=FALSE, warning=FALSE}
+pfa <- qplot(data = red , x = fixed.acidity , binwidth = 0.1)
+pva <- qplot(data = red , x = volatile.acidity , binwidth = 0.05)
+pca <- qplot(data = red , x = citric.acid , binwidth = 0.01)
+prs <- qplot(data = red , x = residual.sugar, binwidth = 0.3)
+pc <- qplot(data = red , x = chlorides , binwidth = 0.01)
+pfsd <- qplot(data = red , x = free.sulfur.dioxide , binwidth = 1)
+ptsd <- qplot(data = red , x = total.sulfur.dioxide , binwidth = 5)
+ptsd_log <- qplot(data = red , x = log10(total.sulfur.dioxide) , binwidth = 0.05)
+ps <- qplot(data = red , x = sulphates , binwidth = 0.1)
+#assing all variables 
+pfa_q6 <-qplot(data = subset(red, quality > 6),
+               x = fixed.acidity, 
+               binwidth = 0.5,
+               xlab = "Fixed.Acidity with qulity>6")
+grid.arrange(pfa, pfa_q6, ncol = 1)
+
+pva_q6 <- qplot(data = subset(red, quality > 6),
+                x = volatile.acidity, 
+                binwidth = 0.05, 
+                xlab = "Volatile.Acidity with qulity>6")
+grid.arrange(pva, pva_q6, ncol = 1)
+
+pca_q6 <- qplot(data = subset(red, quality > 6),
+                x = citric.acid,
+                binwidth = 0.01, 
+                xlab = "Citric.Acid with qulity>6")
+grid.arrange(pca, pca_q6, ncol = 1)
+
+prs_q6 <-qplot(data = subset(red, quality > 6),
+               x = residual.sugar,
+               binwidth = 0.3,
+               xlab = "Residual.Sugar with qulity>6")
+grid.arrange(prs, prs_q6, ncol = 1)
+
+pc_q6 <-qplot(data = subset(red, quality > 6),
+              x = chlorides, 
+              binwidth = 0.01, 
+              xlab = "Chlorides with qulity>6")
+grid.arrange(pc, pc_q6, ncol = 1)
+
+pfsd_q6 <-qplot(data = subset(red, quality > 6),
+                x = free.sulfur.dioxide,
+                binwidth = 1, 
+                xlab = "Free.Sulfur.Dioxide with qulity>6")
+grid.arrange(pfsd, pfsd_q6, ncol = 1)
+
+ptsd_q6 <-qplot(data = subset(red, quality > 6),
+                x = total.sulfur.dioxide,
+                binwidth = 5, 
+                xlab = "Total.Sulfur.Dioxide with qulity>6")
+grid.arrange(ptsd, ptsd_q6, ncol = 1)
+
+ptsd_log_q6 <-qplot(data = subset(red, quality > 6),
+                    x = log10(total.sulfur.dioxide), 
+                    binwidth = 0.05, 
+                    xlab = "Log10(Total.Sulfur.Dioxide) with qulity>6")
+grid.arrange(ptsd_log, ptsd_log_q6, ncol = 1)
+
+ps_q6 <-qplot(data = subset(red, quality > 6), 
+              x = sulphates,
+              binwidth = 0.05, 
+              xlab = "Sulphates with qulity>6")
+grid.arrange(ps, ps_q6, ncol = 1)
+```
+
+From above graph, most of variabels are not obviously change their distribution when better quality, but I found that in the total.sulfur.dioxide variable with better quality, there are no counts for about 110~160. Which means that when total.sulfur.dioxide in 110~160, the red wine quality is not so good.
+
+# Univariate Analysis
+
+### What is the structure of your dataset?
+
+There are 1,599 red wine samples in the dataset with 13 features (fixed.acidity, volatile.acidity, citric.acid, residual.sugar, chlorides, free.sulfur.dioxide, total.sulfur.dioxide, density, pH, sulphates, alcohol and quality). All the variables eclude quality are numeric variables. The quality variable is ordered variable,range from 0 to 10, but in the dataset, minimum point is 3, maximum point is 8.
+<worse --- better>
+<0 --- 10>
+
+### What is/are the main feature(s) of interest in your dataset?
+
+The main idea of this dataset is to determine Which chemical properties influence the quality of red wines. Since varaibles are chemical properties, they may have some relations due to chemistry. For example, total.sulfur.dioxide and free.sulfur.dioxide amy have some correlations because they the are all represent SO2.
+
+### What other features in the dataset do you think will help support your investigation into your feature(s) of interest?
+
+I think that citic acidity, residual sugar and total.sulfur.dioxide are likely affect the quality. In the text file of red wine dataset, citric acid can add 'freshness' and flavor to wines. For sugar, it's rare to find wines with less than 1 gram/liter and wines with greater than 45 grams/liter are considered sweet,but we do have a sample, which residual sugar less than 1 gram/liter. For total.sulfur.dioxide, at free SO2 concentrations over 50 ppm, SO2 becomes evident in the nose and taste of wine. So total.sulfur.dioxide will affect the quality by over 50 ppm.
+
+### Did you create any new variables from existing variables in the dataset?
+
+I created the quality_str in order to plot more nicely.
+```{r echo = FALSE, warning = FALSE}
+p1 <- qplot(data = red, x = quality, binwidth = 1, xlab = "quality_before")
+p2 <- qplot(data = red,x = quality_str, xlab = "quality_after")
+grid.arrange(p1,p2,ncol = 1)
+```
+
+### Of the features you investigated, were there any unusual distributions? Did you perform any operations on the data to tidy, adjust, or change the form of the data? If so, why did you do this?
+
+I log-transformed the right skewed total.sulfur.dioxide distributions. The tranformed distribution for total.sulfur.dioxide appears normal distribution. I also want to transform the residaul sugar.But after log-transformed, it's still a right skewed distribution.
+
+# Bivariate Plots Section
+```{r echo = FALSE, Bivariate_Plots}
+
+cor(red[2:13])
+```
+
+It seems that the feature I chose previously could be wrong since their correlation coefficient are pretty low and total.sulfur.dioxide is negative(citric 0.23, sugar 0.01, total.sulfur.dioxide -0.19). In the correlation table, the most correlatd variable is alcohol(0.48), which is not really strong correlated. the most negative correlated variable is volatile.acidity(-0.39)
+
+      See the scatter plot of alcohol and quality
+```{r echo = FALSE, warning = FALSE}
+ggplot(data = red, aes(quality,alcohol )) +
+  geom_point(color="orange", position = "jitter", alpha = 0.5) +
+  geom_line(stat = "summary", fun.y = mean,color = "red") +
+  geom_line(stat = "summary", fun.y = median, color = "green") +
+  geom_smooth(method = "lm") +
+  ggtitle("Linear regression for qualtiy and alcohol")
+
+quality_alcohol <- lm(formula = I(quality) ~I(alcohol) , data = red)
+summary(quality_alcohol)
+```
+
+green line is the median of alchol in each quality, red line is the mean of alchol in each quality. We can see that in quality 5 ~ 8, this two variable are almost linear.
+By linear regressionline we can get the blue line, which is near the green and red line
+Althogh the R^2 is not so high(0.227), the model is still significant(P<0.05). 
+
+```{r echo = FALSE, warning = FALSE}
+ggplot(data= red, aes(quality,volatile.acidity))+
+  geom_point(color = "orange", position = "jitter", alpha = 0.5)+
+  geom_line(stat = "summary", fun.y = mean,color = "red")+
+  geom_line(stat = "summary", fun.y = median, color = "green")+
+  geom_smooth(method = "lm") +
+  ggtitle("Linear regression for qualtiy and acidity")
+
+quality_volatile.acidity <- lm(formula = I(quality) ~I(volatile.acidity) , data = red)
+summary(quality_volatile.acidity)
+```
+
+As above, this figure is about quality and volatile.acidity. we can clearly see that three lines(mean, median, lm) are almost the same. The mode is significant so we can know that the volatile.acidity is better to be low in red wine.
+
+```{r echo = FALSE, warning = FALSE}
+
+ggplot(aes(x = quality_str, y = alcohol), data = red) +
+  geom_boxplot() + 
+  ggtitle("boxplot for alcohol and quality")
+
+ggplot(aes( x = quality_str, y = volatile.acidity), data = red) +
+  geom_boxplot() + 
+  ggtitle("boxplot for acidity and quality")
+```
+
+From the boxplot, we can see the pattern of alcohol and olatile.acidity, which is similar to our linea regression line. But there are much outliers at 5 or 6 in this two graphs.
+
+```{r echo = FALSE, warning = FALSE}
+ggplot(data = red, aes(quality, residual.sugar)) +
+  geom_point(color = "orange", position = "jitter", alpha = 0.3) +
+  geom_line(stat = "summary", fun.y = mean,color = "red") +
+  geom_line(stat = "summary", fun.y = median, color = "green") +
+  geom_smooth(method = "lm") +
+  ggtitle("Linear regression for qualtiy and residual.sugar")
+
+quality_sugar  <- lm(formula = I(quality) ~I(residual.sugar ) , data = red)
+summary(quality_sugar)
+```
+
+In the text file of red wine dataset, it indicated that citric acid can add 'freshness' and flavor to wines. But by our graph and linear regression, there are no significant relations between citric acid and quality.
+
+```{r echo = FALSE, warning = FALSE}
+ggplot(data=red, aes(quality,free.sulfur.dioxide )) +
+  geom_point(color="orange", position = "jitter", alpha = 0.3) +
+  geom_line(stat = "summary", fun.y = mean,color = "red") +
+  geom_line(stat = "summary", fun.y = median, color = "green") +
+  geom_smooth(method = "lm") +
+  ggtitle("Linear regression for qualtiy and free.sulfur.dioxide")
+
+quality_free.sulfur.dioxide  <- lm(formula = I(quality) ~I(free.sulfur.dioxide), 
+                                   data = red)
+summary(quality_free.sulfur.dioxide)
+```
+
+The R^2 is very small but the model is significant. This is tricky since text file indicated that free SO2 concentrations over 50 ppm, SO2 becomes evident in the nose and taste of wine. I remember that S02 smell bad, but in our graph, all free SO2 in worst quality 3 are all under 50 ppm. We still can see that quality and free.sulfur.dioxide are negative correlated. There are lots of wine scored at 5 or 6 has over 50 ppm in SO2, so I will see more clear about this in next graph.
+
+```{r echo=FALSE, warning = FALSE}
+ggplot(data = subset(red, red$free.sulfur.dioxide>50)) +
+  geom_point(size = 3, aes(quality, free.sulfur.dioxide)) +
+  scale_x_continuous(breaks = seq(5,7,1)) +
+  ggtitle("Good quality with SO2 > 50")
+```
+
+There are only 11 samples that have SO2 over 50 ppm, but all have higher quality.
+We know that alcohol and volatile.acidity will affect the quality. So next graph we will see if those viriables make wine better quality even the samples have SO2 over 50 ppm.
+
+```{r echo=FALSE, warning = FALSE}
+ggplot(data = subset(red, red$free.sulfur.dioxide > 50)) +
+  geom_point(aes(free.sulfur.dioxide,alcohol)) +
+  geom_line(data = red, aes(free.sulfur.dioxide,alcohol),stat = "summary",
+            fun.y = mean,color = "red") +
+  ggtitle("Mean alcohol with SO2 > 50")
+
+ggplot(data = subset(red, red$free.sulfur.dioxide>50)) +
+  geom_point(aes(free.sulfur.dioxide,volatile.acidity)) +
+  geom_line(data = subset(red,red$quality > 5),
+            aes(free.sulfur.dioxide,volatile.acidity),
+            stat="summary", fun.y = mean) +
+  ggtitle("Mean acidity with SO2 > 50")
+
+
+  
+```
+
+The graph above show the samples which SO2 over 50 but still have good quality. I try to understand why this happend. So I draw a scatter plot to see if there some pattern for this two graph. Unfortunately, we can see that, at the free.sulfur.dioxide about 50, there are so many different value of alcohol from 9 ~ 13. For volatile.acidity, there still many different value from 0.2 ~ 0.6 at the free.sulfur.dioxide about 50. This show that alcohol or volatile.acidity may not affect the quality when free.sulfur.dioxide is about 50.
+
+# Bivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the investigation. How did the feature(s) of interest vary with other features in the dataset?
+
+There are not many vairiable strong correlated to quality since their correlation coefficient are not big enough. I chose volatile.acidity and alcohol to be indepedent vairable. Both of the models are significant, alcohol is positive and volatile.acidity is negative. The higher the alcohol, better the quality. The lower the volatile.acidity, better the quality.
+
+### Did you observe any interesting relationships between the other features (not the main feature(s) of interest)?
+
+By the text file, if said that at free SO2 concentrations over 50 ppm, SO2 becomes evident in the nose and taste of wine. So I want to check if any good quality samples but free SO2 concentrations over 50 ppm and I got 11 samples. Unfortunately, those samples are not affected by volatile.acidity or alcohol. When free.sulfur.dioxide at 50, there are too many differeny value of volatile.acidity or alcohol. I will test more further in next section to figure why free SO2 concentrations over 50 ppm but have good quality.
+
+
+### What was the strongest relationship you found?
+
+Alcohol is the strongest feature of quality. We have this formula
+(quality = 0.36*alcohol + 1.87)
+
+
+# Multivariate Plots Section
+
+```{r echo=FALSE, warning = FALSE, Multivariate_Plots}
+red$quality_str <- as.factor(red$quality_str)
+ggplot(data = red, aes(alcohol, volatile.acidity, color=quality_str )) + geom_line(aes(color = red$quality_str )) +
+  ggtitle("line of quality with alcohol and acidity")
+```
+
+This graph cotains too much line to analyze
+
+```  {r echo=FALSE, warning = FALSE}
+red$quality.group <- cut(red$quality, breaks = seq(2,8,2))
+red$quality.group <- as.factor(red$quality.group)
+table(red$quality.group)
+
+ggplot(data = red, aes(alcohol,volatile.acidity)) +
+  geom_point(aes(color = red$quality.group), position = "jitter", alpha = 0.3) +
+  scale_color_discrete(labels = c("worse", "normal", "better")) +
+  labs(color = "quality_group")+
+  ggtitle("Scatter of quality_group with alcohol and acidity")
+  
+  
+```
+
+Cut the quality variable into group, we want to see that if different group of quality will have different pattern in volatile.acidity and alcohol. By the graph, we can clearly see that if alcohol is less than 12, the lower the volatile.acidity, the better the quality. After alcohol over 12, there is not clear pattern in quality group.
+
+``` {r echo=FALSE, warning = FALSE}
+
+ggplot(data = red, aes(quality,volatile.acidity)) +
+  geom_boxplot(aes(color = red$quality.group)) +
+  ggtitle("boxlpot of quality_group with acidity and quality")
+
+ggplot(data =red, aes(quality,alcohol)) +
+  geom_boxplot(aes(color = red$quality.group)) +
+  ggtitle("boxlpot of quality_group with alcohol and quality")
+
+```
+
+We can see that in the boxplot, higher quality wine have lower volatile.acidity.
+But in the case of alcohol, we can see there are lots of wine which alcohol >12 but in the normal group. And the higher quality still have higher mean of alcohol than other groups.
+
+```{r echo=FALSE, warning = FALSE}
+ggplot(data=red, aes(alcohol, volatile.acidity,color=quality.group)) +
+  facet_wrap(~quality.group) +
+  geom_point(position = "jitter", alpha = 0.2) +
+  scale_color_discrete(labels = c("worse", "normal", "better")) +
+  labs(color = "quality_group") +
+  ggtitle("Scatter plot of quality_group with acidity and alcohol")
+
+```
+
+In this graph, we can get the same result as before, most of better quality wine have lower volatile.acidity and higher alcohol.
+
+# Multivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the investigation. Were there features that strengthened each other in terms of looking at your feature(s) of interest?
+
+I used the highest correlated and second highest correlated variable with quality.
+Both of their linear regression model are signicant. Alcohol is positive related and volatile.acidity is negative related. But the pattern is more obvious in volatile.acidity, we can see that most of good quality samples have lower volatile.acidity. As for alcohol, most of good quality samples have higher alcohol, but there are still many samples have higher alcohol in normal group.
+
+### Were there any interesting or surprising interactions between features?
+
+I am really suprised that the variables I chose depend on the text_file have no related to quality, such like free.sulfur.dioxide and citric.acid. They seems like to have some relations between quality.
+
+### OPTIONAL: Did you create any models with your dataset? Discuss the strengths and limitations of your model.
+I created the quality ~ alcohol and quality ~ volatile.acidity model. Both of them are significant.
+------
+
+# Final Plots and Summary
+
+### Plot One
+```{r echo=FALSE, Plot_One}
+pca <- qplot(data = red , x = citric.acid , binwidth=0.01,
+             xlab = "Citric.Acid") +
+  ggtitle("Distribution of Citric.Acid")
+pca_q6 <- qplot(data = subset(red, quality > 6), 
+                x = citric.acid, 
+                binwidth = 0.01, 
+                xlab = "Citric.Acid with Quality>6") 
+grid.arrange(pca, pca_q6, ncol = 1) 
+
+```
+
+From the series of quality >6 graph. Citric.acid is the only one have different patten have subset to quality > 6. The count of citric.acid at quality >6 are all under 10 and distributed averagely. And the correaltion coefficient between quality and citric.acid is 0.226, which is not so high.
+
+### Description One
+
+
+### Plot Two
+```{r echo = FALSE, Plot_Two}
+ggplot(data = red, aes(quality,volatile.acidity)) +
+  geom_point(color = "orange", alpha = 0.3, position = "jitter") +
+  geom_line(stat = "summary", fun.y = mean,color = "red") +
+  geom_line(stat = "summary", fun.y = median, color= "green") +
+  geom_smooth(method = "lm")+
+  ggtitle("Linear regression with acidity and quality")
+```
+
+### Description Two
+
+We can easily see that the linear regression line is almost the same as mediand and mean line, which is clearly pattern between quality and volatile.acidity
+
+### Plot Three
+```{r echo=FALSE, Plot_Three}
+ggplot(data = red, aes(alcohol, volatile.acidity, color = quality.group)) +
+  facet_wrap(~quality.group) +
+  geom_point(position = "jitter", alpha = 0.2)+
+  scale_color_discrete(labels = c("worse", "normal", "better")) +
+  labs(color = "quality_group")+
+  ggtitle("Scatter plot of quality_group with acidity and alcohol")
+
+```
+
+
+### Description Three
+
+For volatile.acidity, we can clearly see that in different quality group, volatile.acidity seems to be lower in the better quality. For alcohol, there is 
+no obvious pattern in alcohol because alcohol distributed widely in this graph. But we can see that in the worse quality group, most of wines are under alcohol 12.
+
+
+------
+
+# Reflection
+
+This red wine dataset contains 1,599 observations and 13 variables. Which really suprised me is that most variables are not strong correlated to the quality variable.
+I chose the first and second higher correlated variable to make a linear regression model, both of them are significant though their coefficient are not so high(.48, -.39).
+I was stuck by the category variable in mulitvairiate part. Because we need to use category vairable to use facet method. And we only have one category variable(quality) in the dataset. I used group method to group the quality by worse, normal, better, which helped me analyze more clearly.
+The text file indicated that SO2 and citric.acid may affect the quality, but in my analysis, it seems that those vraiables are not correlated to quality.
+I didn't check other variables if they would affect the quality since I only use high correlated variable. So I think this analysis could be enriched by more variable surveyed.Like the years of red wine, we all know that different years of redwine would affect the price. And the text file should be more specifilcally about the quality of red wine.
