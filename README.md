@@ -1,4 +1,4 @@
-## udacity_data_analyst_nano_degree
+## Udacity Data Analyst Nano Degree
 
 I start my data science path by learning skill from this nano degree. I have learn lots of skill to finish a demanding project by myself, including data cleaning, data wragling, data visualizaion, modeling. Here are all the projects list
 
